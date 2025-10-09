@@ -1,0 +1,92 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GitHub Milestone Schema",
+  "description": "Schema for defining GitHub milestone structures to be created from milestones and tasks",
+  "type": "object",
+  "required": ["project", "milestones", "mainTrackingIssue"],
+  "properties": {
+    "project": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the project"
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the project"
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Default labels to apply to all issues"
+        }
+      }
+    },
+    "milestones": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["title", "tasks"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Title of the milestone"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the milestone"
+          },
+          "labels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Additional labels for this milestone"
+          },
+          "tasks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["title"],
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "description": "Title of the task"
+                },
+                "description": {
+                  "type": "string",
+                  "description": "Description of the task"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "mainTrackingIssue": {
+      "type": "object",
+      "required": ["title"],
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Title of the main tracking issue"
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the main tracking issue"
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Labels for the main tracking issue"
+        }
+      }
+    }
+  }
+}

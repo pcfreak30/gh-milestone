@@ -1,0 +1,13 @@
+[project]
+name = "gh-milestone-cli"
+version = "0.1.0"
+description = "GitHub CLI extension for creating hierarchical milestone structures from roadmap definitions"
+requires-python = ">=3.12"
+dependencies = [
+    "jsonschema>=4.0.0",
+    "markdown-it-py>=3.0.0",
+    "pygithub>=1.59.0",
+    "fastapi>=0.68.0",
+    "uvicorn>=0.15.0",
+    "mcp>=1.16.0",
+]

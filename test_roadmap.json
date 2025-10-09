@@ -1,0 +1,44 @@
+{
+  "project": {
+    "name": "Test Project",
+    "description": "A test project for milestone creation",
+    "labels": ["test", "demo"]
+  },
+  "milestones": [
+    {
+      "title": "Phase 1: Setup",
+      "description": "Initial project setup and configuration",
+      "labels": ["setup"],
+      "tasks": [
+        {
+          "title": "Create repository structure",
+          "description": "Set up the basic directory structure for the project"
+        },
+        {
+          "title": "Configure CI/CD pipeline",
+          "description": "Set up continuous integration and deployment"
+        }
+      ]
+    },
+    {
+      "title": "Phase 2: Development",
+      "description": "Core development work",
+      "labels": ["development"],
+      "tasks": [
+        {
+          "title": "Implement core features",
+          "description": "Develop the main functionality"
+        },
+        {
+          "title": "Write tests",
+          "description": "Create comprehensive test suite"
+        }
+      ]
+    }
+  ],
+  "mainTrackingIssue": {
+    "title": "Project Roadmap",
+    "description": "Main tracking issue for the entire project",
+    "labels": ["epic", "roadmap"]
+  }
+}
