@@ -2,3 +2,5 @@
 
 [branches]
 main = "develop"
+[ship]
+strategy = "fast-forward"
