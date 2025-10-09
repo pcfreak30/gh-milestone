@@ -1,0 +1,230 @@
+#compdef gh-milestone milestone
+
+# Zsh completion script for gh-milestone CLI
+
+_gh_milestone() {
+    local -a commands
+    commands=(
+        'create:Create GitHub issues from roadmap'
+        'validate:Validate roadmap file against schema'
+        'delete:Delete GitHub issues from roadmap'
+        'update:Update existing GitHub issues from roadmap'
+        'list:List current hierarchy and state'
+        'status:Show progress and completion status'
+        'validate-state:Validate state file entries'
+        'migrate-state:Migrate state file to current format'
+        'sync:Synchronize state with GitHub and roadmap'
+        'completion:Generate shell completion scripts'
+        'mcp:Start MCP server with specified transport'
+        'mcp-server:Start MCP HTTP server'
+    )
+
+    local -a common_options
+    common_options=(
+        '--schema[Path to the JSON schema file]:schema file:_files -g "*.json"'
+        '--repo[Explicit repository name (owner/repo)]:repository:'
+        '(-v --verbose)'{-v,--verbose}'[Enable verbose output]'
+        '(-h --help)'{-h,--help}'[Show help message]'
+    )
+
+    local -a create_options
+    create_options=(
+        '--dry-run[Perform a dry run without creating issues]'
+        "${common_options[@]}"
+    )
+
+    local -a validate_options
+    validate_options=(
+        "${common_options[@]}"
+    )
+
+    local -a delete_options
+    delete_options=(
+        '--milestone[Title of the milestone to delete]:milestone title:_gh_milestone_milestones'
+        '--task[Title of the task to delete]:task title:_gh_milestone_tasks'
+        '--milestone-parent[Title of the parent milestone when deleting a task]:milestone title:_gh_milestone_milestones'
+        '--dry-run[Perform a dry run without deleting issues]'
+        "${common_options[@]}"
+    )
+
+    local -a update_options
+    update_options=(
+        '--milestone[Title of the milestone to update]:milestone title:_gh_milestone_milestones'
+        '--task[Title of the task to update]:task title:_gh_milestone_tasks'
+        '--milestone-parent[Title of the parent milestone when updating a task]:milestone title:_gh_milestone_milestones'
+        '(-u --update-title)'{-u,--update-title}'[Update issue titles]'
+        '(-d --update-description)'{-d,--update-description}'[Update issue descriptions]'
+        '(-l --update-labels)'{-l,--update-labels}'[Update issue labels]'
+        '--dry-run[Perform a dry run without updating issues]'
+        "${common_options[@]}"
+    )
+
+    local -a list_options
+    list_options=(
+        '--format[Output format]:format:(tree table json)'
+        '--show-missing[Show issues defined in roadmap but not existing in GitHub]'
+        "${common_options[@]}"
+    )
+
+    local -a status_options
+    status_options=(
+        '--format[Output format]:format:(summary detailed json)'
+        '--detailed[Show detailed status information]'
+        "${common_options[@]}"
+    )
+
+    local -a validate_state_options
+    validate_state_options=(
+        '--cleanup[Automatically remove invalid entries from state]'
+        '--dry-run[Show what would be cleaned up without actually cleaning]'
+        "${common_options[@]}"
+    )
+
+    local -a migrate_state_options
+    migrate_state_options=(
+        '--dry-run[Show what would be migrated without actually migrating]'
+        "${common_options[@]}"
+    )
+
+    local -a sync_options
+    sync_options=(
+        '--dry-run[Show what would be synced without actually syncing]'
+        "${common_options[@]}"
+    )
+
+    local curcontext="$curcontext" state line
+    typeset -A opt_args
+
+    _arguments -C \
+        '1: :->command' \
+        '*: :->args'
+
+    case $state in
+        command)
+            _describe 'command' commands
+            ;;
+        args)
+            case $line[1] in
+                create)
+                    _arguments -s \
+                        '1:roadmap file:_files -g "*.json"' \
+                        "${create_options[@]}"
+                    ;;
+                validate)
+                    _arguments -s \
+                        '1:roadmap file:_files -g "*.json"' \
+                        "${validate_options[@]}"
+                    ;;
+                delete)
+                    _arguments -s \
+                        '1:roadmap file:_files -g "*.json"' \
+                        "${delete_options[@]}"
+                    ;;
+                update)
+                    _arguments -s \
+                        '1:roadmap file:_files -g "*.json"' \
+                        "${update_options[@]}"
+                    ;;
+                list)
+                    _arguments -s \
+                        '1:roadmap file:_files -g "*.json"' \
+                        "${list_options[@]}"
+                    ;;
+                status)
+                    _arguments -s \
+                        '1:roadmap file:_files -g "*.json"' \
+                        "${status_options[@]}"
+                    ;;
+                validate-state)
+                    _arguments -s \
+                        '1:roadmap file:_files -g "*.json"' \
+                        "${validate_state_options[@]}"
+                    ;;
+                migrate-state)
+                    _arguments -s \
+                        '1:roadmap file:_files -g "*.json"' \
+                        "${migrate_state_options[@]}"
+                    ;;
+                sync)
+                    _arguments -s \
+                        '1:roadmap file:_files -g "*.json"' \
+                        "${sync_options[@]}"
+                    ;;
+                completion)
+                    _arguments -s \
+                        '--force[Force overwrite of existing completion files]' \
+                        '--shell[Shell type for completion]:shell:(bash zsh)' \
+                        '--install[Install completion for current shell]' \
+                        "${common_options[@]}"
+                    ;;
+                mcp)
+                    _arguments -s \
+                        '--transport[Transport type]:transport:(stdio http)' \
+                        '--host[Host for HTTP transport]:host:' \
+                        '--port[Port for HTTP transport]:port:' \
+                        "${common_options[@]}"
+                    ;;
+                mcp-server)
+                    _arguments -s \
+                        '--schema-file[Path to the JSON schema file]:schema file:_files -g "*.json"' \
+                        '--host[Host for the server]:host:' \
+                        '--port[Port for the server]:port:' \
+                        "${common_options[@]}"
+                    ;;
+            esac
+            ;;
+    esac
+}
+
+# Helper functions for completion
+_gh_milestone_milestones() {
+    local roadmap_file=""
+    
+    # Find the roadmap file in the command line
+    for ((i=1; i<=CURRENT; i++)); do
+        if [[ ${words[i]} == *.json ]]; then
+            roadmap_file=${words[i]}
+            break
+        fi
+    done
+    
+    if [[ -n "$roadmap_file" && -f "$roadmap_file" ]]; then
+        local milestones=(${(f)"$(jq -r '.milestones[].title' "$roadmap_file" 2>/dev/null)"})
+        if [[ ${#milestones[@]} -gt 0 ]]; then
+            _describe 'milestone' milestones
+        fi
+    fi
+}
+
+_gh_milestone_tasks() {
+    local roadmap_file=""
+    local milestone_title=""
+    
+    # Find the roadmap file and milestone title in the command line
+    for ((i=1; i<=CURRENT; i++)); do
+        if [[ ${words[i]} == *.json ]]; then
+            roadmap_file=${words[i]}
+        elif [[ ${words[i]} == "--milestone-parent" && $((i+1)) -le CURRENT ]]; then
+            milestone_title=${words[i+1]}
+        fi
+    done
+    
+    if [[ -n "$roadmap_file" && -f "$roadmap_file" ]]; then
+        local tasks=()
+        if [[ -n "$milestone_title" ]]; then
+            # Get tasks for specific milestone
+            tasks=(${(f)"$(jq -r --arg milestone "$milestone_title" \
+                '.milestones[] | select(.title == $milestone) | .tasks[].title' \
+                "$roadmap_file" 2>/dev/null)"})
+        else
+            # Get all tasks
+            tasks=(${(f)"$(jq -r '.milestones[].tasks[].title' "$roadmap_file" 2>/dev/null)"})
+        fi
+        
+        if [[ ${#tasks[@]} -gt 0 ]]; then
+            _describe 'task' tasks
+        fi
+    fi
+}
+
+_gh_milestone "$@"

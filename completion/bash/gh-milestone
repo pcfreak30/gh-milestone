@@ -1,0 +1,182 @@
+#!/bin/bash
+#
+# Bash completion script for gh-milestone CLI
+#
+
+_gh_milestone_completion() {
+    local cur prev words cword
+    _init_completion || return
+
+    # Main commands
+    local commands="create validate delete update list status validate-state migrate-state sync completion mcp mcp-server"
+    
+    # Common options
+    local common_options="--schema --verbose -v --help -h --repo"
+    
+    # File extensions for completion
+    local file_extensions="json"
+    
+    case "${prev}" in
+        gh-milestone|milestone)
+            COMPREPLY=($(compgen -W "${commands}" -- "${cur}"))
+            return 0
+            ;;
+        create|validate|delete|update|list|status|validate-state|migrate-state|sync|completion|mcp|mcp-server)
+            # Complete roadmap file names
+            COMPREPLY=($(compgen -f -X "!*.${file_extensions}" -- "${cur}") \
+                       $(compgen -f -X "!*.${file_extensions}" -- "${cur}"))
+            return 0
+            ;;
+        --schema)
+            # Complete schema file names
+            COMPREPLY=($(compgen -f -X "!*.${file_extensions}" -- "${cur}") \
+                       $(compgen -f -X "!*.${file_extensions}" -- "${cur}"))
+            return 0
+            ;;
+        --milestone)
+            # Try to extract milestone titles from the roadmap file
+            local roadmap_file=""
+            for ((i=0; i<${cword}; i++)); do
+                if [[ "${words[i]}" =~ \.(json)$ ]]; then
+                    roadmap_file="${words[i]}"
+                    break
+                fi
+            done
+            
+            if [[ -n "${roadmap_file}" && -f "${roadmap_file}" ]]; then
+                local milestones=$(jq -r '.milestones[].title' "${roadmap_file}" 2>/dev/null)
+                if [[ -n "${milestones}" ]]; then
+                    COMPREPLY=($(compgen -W "${milestones}" -- "${cur}"))
+                fi
+            fi
+            return 0
+            ;;
+        --task)
+            # Try to extract task titles from the roadmap file
+            local roadmap_file=""
+            local milestone_title=""
+            for ((i=0; i<${cword}; i++)); do
+                if [[ "${words[i]}" =~ \.(json)$ ]]; then
+                    roadmap_file="${words[i]}"
+                elif [[ "${words[i]}" == "--milestone-parent" && $((i+1)) -lt ${cword} ]]; then
+                    milestone_title="${words[i+1]}"
+                fi
+            done
+            
+            if [[ -n "${roadmap_file}" && -f "${roadmap_file}" ]]; then
+                if [[ -n "${milestone_title}" ]]; then
+                    # Get tasks for specific milestone
+                    local tasks=$(jq -r --arg milestone "${milestone_title}" \
+                        '.milestones[] | select(.title == $milestone) | .tasks[].title' \
+                        "${roadmap_file}" 2>/dev/null)
+                else
+                    # Get all tasks
+                    local tasks=$(jq -r '.milestones[].tasks[].title' "${roadmap_file}" 2>/dev/null)
+                fi
+                if [[ -n "${tasks}" ]]; then
+                    COMPREPLY=($(compgen -W "${tasks}" -- "${cur}"))
+                fi
+            fi
+            return 0
+            ;;
+        --milestone-parent)
+            # Try to extract milestone titles from the roadmap file
+            local roadmap_file=""
+            for ((i=0; i<${cword}; i++)); do
+                if [[ "${words[i]}" =~ \.(json)$ ]]; then
+                    roadmap_file="${words[i]}"
+                    break
+                fi
+            done
+            
+            if [[ -n "${roadmap_file}" && -f "${roadmap_file}" ]]; then
+                local milestones=$(jq -r '.milestones[].title' "${roadmap_file}" 2>/dev/null)
+                if [[ -n "${milestones}" ]]; then
+                    COMPREPLY=($(compgen -W "${milestones}" -- "${cur}"))
+                fi
+            fi
+            return 0
+            ;;
+        --format)
+            # Complete format options based on command
+            local format_options=""
+            for ((i=0; i<${cword}; i++)); do
+                case "${words[i]}" in
+                    list)
+                        format_options="tree table json"
+                        break
+                        ;;
+                    status)
+                        format_options="summary detailed json"
+                        break
+                        ;;
+                esac
+            done
+            if [[ -n "${format_options}" ]]; then
+                COMPREPLY=($(compgen -W "${format_options}" -- "${cur}"))
+            fi
+            return 0
+            ;;
+        *)
+            # Complete options based on the command
+            local cmd=""
+            for ((i=0; i<${cword}; i++)); do
+                if [[ " ${commands} " =~ " ${words[i]} " ]]; then
+                    cmd="${words[i]}"
+                    break
+                fi
+            done
+            
+            case "${cmd}" in
+                create)
+                    COMPREPLY=($(compgen -W "--dry-run ${common_options}" -- "${cur}"))
+                    ;;
+                validate)
+                    COMPREPLY=($(compgen -W "${common_options}" -- "${cur}"))
+                    ;;
+                delete)
+                    COMPREPLY=($(compgen -W "--milestone --task --milestone-parent --dry-run ${common_options}" -- "${cur}"))
+                    ;;
+                update)
+                    COMPREPLY=($(compgen -W "--milestone --task --milestone-parent -u -d -l --update-title --update-description --update-labels --dry-run ${common_options}" -- "${cur}"))
+                    ;;
+                list)
+                    COMPREPLY=($(compgen -W "--format --show-missing ${common_options}" -- "${cur}"))
+                    ;;
+                status)
+                    COMPREPLY=($(compgen -W "--format --detailed ${common_options}" -- "${cur}"))
+                    ;;
+                validate-state)
+                    COMPREPLY=($(compgen -W "--cleanup --dry-run ${common_options}" -- "${cur}"))
+                    ;;
+                migrate-state)
+                    COMPREPLY=($(compgen -W "--dry-run ${common_options}" -- "${cur}"))
+                    ;;
+                sync)
+                    COMPREPLY=($(compgen -W "--dry-run ${common_options}" -- "${cur}"))
+                    ;;
+                completion)
+                    COMPREPLY=($(compgen -W "--force --shell --install ${common_options}" -- "${cur}"))
+                    ;;
+                mcp)
+                    COMPREPLY=($(compgen -W "--transport --host --port ${common_options}" -- "${cur}"))
+                    ;;
+                mcp-server)
+                    COMPREPLY=($(compgen -W "--schema-file --host --port ${common_options}" -- "${cur}"))
+                    ;;
+                *)
+                    # If no command found yet, complete commands
+                    if [[ ${cword} -eq 1 ]]; then
+                        COMPREPLY=($(compgen -W "${commands}" -- "${cur}"))
+                    else
+                        COMPREPLY=($(compgen -W "${common_options}" -- "${cur}"))
+                    fi
+                    ;;
+            esac
+            return 0
+            ;;
+    esac
+}
+
+complete -F _gh_milestone_completion gh-milestone
+complete -F _gh_milestone_completion milestone
