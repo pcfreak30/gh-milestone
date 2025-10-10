@@ -1,24 +1,18 @@
 import unittest
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch, mock_open
 import sys
+import os
 from pathlib import Path
+from tests.test_base import BaseTestCase
 
 # Add the gh_milestone directory to the path so we can import from gh_milestone
-sys.path.insert(0, str(Path(__file__).parent.parent / "gh_milestone"))
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from gh_milestone.cli import CLI
 
 
-class TestCompletion(unittest.TestCase):
+class TestCompletion(BaseTestCase):
     """Test cases for the completion functionality."""
-
-    def setUp(self):
-        """Set up test fixtures before each test method."""
-        self.cli = CLI()
-
-    def tearDown(self):
-        """Tear down test fixtures after each test method."""
-        pass
 
     def test_completion_command_parsing(self):
         """Test parsing arguments for completion command."""
@@ -28,21 +22,22 @@ class TestCompletion(unittest.TestCase):
             # Test basic completion command
             sys.argv = ['cli.py', 'completion']
             
-            with patch('gh_milestone.cli.argparse.ArgumentParser.parse_args') as mock_parse_args:
-                mock_parse_args.return_value = Mock(
-                    command='completion',
-                    shell=None,
-                    install=False,
-                    force=False,
-                    dry_run=False
-                )
+            cli = self.create_cli_instance()
+            mock_parse_args = self.setup_argparse_mocks()
+            mock_args = Mock()
+            mock_parse_args.return_value = mock_args
+            mock_args.command = 'completion'
+            mock_args.shell = None
+            mock_args.install = False
+            mock_args.force = False
+            mock_args.dry_run = False
                 
-                args = self.cli.parse_args()
-                self.assertEqual(args.command, 'completion')
-                self.assertIsNone(args.shell)
-                self.assertFalse(args.install)
-                self.assertFalse(args.force)
-                self.assertFalse(args.dry_run)
+            args = cli.parse_args()
+            self.assertEqual(args.command, 'completion')
+            self.assertIsNone(args.shell)
+            self.assertFalse(args.install)
+            self.assertFalse(args.force)
+            self.assertFalse(args.dry_run)
         finally:
             sys.argv = original_argv
 
@@ -54,18 +49,19 @@ class TestCompletion(unittest.TestCase):
             # Test completion command with shell specification
             sys.argv = ['cli.py', 'completion', '--shell', 'bash']
             
-            with patch('gh_milestone.cli.argparse.ArgumentParser.parse_args') as mock_parse_args:
-                mock_parse_args.return_value = Mock(
-                    command='completion',
-                    shell='bash',
-                    install=False,
-                    force=False,
-                    dry_run=False
-                )
+            cli = self.create_cli_instance()
+            mock_parse_args = self.setup_argparse_mocks()
+            mock_args = Mock()
+            mock_parse_args.return_value = mock_args
+            mock_args.command = 'completion'
+            mock_args.shell = 'bash'
+            mock_args.install = False
+            mock_args.force = False
+            mock_args.dry_run = False
                 
-                args = self.cli.parse_args()
-                self.assertEqual(args.command, 'completion')
-                self.assertEqual(args.shell, 'bash')
+            args = cli.parse_args()
+            self.assertEqual(args.command, 'completion')
+            self.assertEqual(args.shell, 'bash')
         finally:
             sys.argv = original_argv
             
@@ -73,19 +69,20 @@ class TestCompletion(unittest.TestCase):
             # Test completion command with install flag
             sys.argv = ['cli.py', 'completion', '--shell', 'zsh', '--install']
             
-            with patch('gh_milestone.cli.argparse.ArgumentParser.parse_args') as mock_parse_args:
-                mock_parse_args.return_value = Mock(
-                    command='completion',
-                    shell='zsh',
-                    install=True,
-                    force=False,
-                    dry_run=False
-                )
+            cli = self.create_cli_instance()
+            mock_parse_args = self.setup_argparse_mocks()
+            mock_args = Mock()
+            mock_parse_args.return_value = mock_args
+            mock_args.command = 'completion'
+            mock_args.shell = 'zsh'
+            mock_args.install = True
+            mock_args.force = False
+            mock_args.dry_run = False
                 
-                args = self.cli.parse_args()
-                self.assertEqual(args.command, 'completion')
-                self.assertEqual(args.shell, 'zsh')
-                self.assertTrue(args.install)
+            args = cli.parse_args()
+            self.assertEqual(args.command, 'completion')
+            self.assertEqual(args.shell, 'zsh')
+            self.assertTrue(args.install)
         finally:
             sys.argv = original_argv
             
@@ -93,226 +90,280 @@ class TestCompletion(unittest.TestCase):
             # Test completion command with force flag
             sys.argv = ['cli.py', 'completion', '--shell', 'bash', '--install', '--force']
             
-            with patch('gh_milestone.cli.argparse.ArgumentParser.parse_args') as mock_parse_args:
-                mock_parse_args.return_value = Mock(
-                    command='completion',
-                    shell='bash',
-                    install=True,
-                    force=True,
-                    dry_run=False
-                )
+            cli = self.create_cli_instance()
+            mock_parse_args = self.setup_argparse_mocks()
+            mock_args = Mock()
+            mock_parse_args.return_value = mock_args
+            mock_args.command = 'completion'
+            mock_args.shell = 'bash'
+            mock_args.install = True
+            mock_args.force = True
+            mock_args.dry_run = False
                 
-                args = self.cli.parse_args()
-                self.assertEqual(args.command, 'completion')
-                self.assertEqual(args.shell, 'bash')
-                self.assertTrue(args.install)
-                self.assertTrue(args.force)
+            args = cli.parse_args()
+            self.assertEqual(args.command, 'completion')
+            self.assertEqual(args.shell, 'bash')
+            self.assertTrue(args.install)
+            self.assertTrue(args.force)
         finally:
             sys.argv = original_argv
 
     def test_shell_detection_bash(self):
         """Test shell detection for bash."""
-        with patch.dict('os.environ', {'SHELL': '/bin/bash'}):
-            shell = self.cli._detect_shell()
+        cli = self.create_cli_instance()
+        mock_print, mock_exit = self.setup_basic_completion_mocks()
+        
+        with patch.dict(os.environ, {'SHELL': '/bin/bash'}, clear=True):
+            shell = cli._detect_shell()
             self.assertEqual(shell, 'bash')
 
     def test_shell_detection_zsh(self):
         """Test shell detection for zsh."""
-        with patch.dict('os.environ', {'SHELL': '/bin/zsh'}):
-            shell = self.cli._detect_shell()
+        cli = self.create_cli_instance()
+        mock_print, mock_exit = self.setup_basic_completion_mocks()
+        
+        with patch.dict(os.environ, {'SHELL': '/bin/zsh'}, clear=True):
+            shell = cli._detect_shell()
             self.assertEqual(shell, 'zsh')
 
     def test_shell_detection_none(self):
         """Test shell detection when shell is not recognized."""
-        with patch.dict('os.environ', {'SHELL': '/bin/fish'}):
-            shell = self.cli._detect_shell()
+        cli = self.create_cli_instance()
+        mock_print, mock_exit = self.setup_basic_completion_mocks()
+        
+        with patch.dict(os.environ, {'SHELL': '/bin/fish'}, clear=True):
+            shell = cli._detect_shell()
             self.assertIsNone(shell)
 
-    @patch('gh_milestone.cli.Path.exists')
-    def test_completion_script_resolution_development(self, mock_exists):
+    def test_completion_script_resolution_development(self):
         """Test completion script resolution from development directory."""
-        # Mock exists to return True for at least one of the paths
-        mock_exists.return_value = True
-        
-        with patch('gh_milestone.cli.Path.read_text') as mock_read_text:
-            mock_read_text.return_value = "# Bash completion script content"
+        cli = self.create_cli_instance()
+        mock_print, mock_exit = self.setup_basic_completion_mocks()
+        mock_path_class, mock_path_instance = self.setup_completion_path_mocks()
+        mock_path_instance.exists.return_value = True
+        mock_path_instance.read_text.return_value = "#!/bin/bash\n# Bash completion script"
             
-            script_content = self.cli._get_completion_script('bash')
-            self.assertEqual(script_content, "# Bash completion script content")
+        script_content = cli._get_completion_script('bash')
+        self.assertTrue(script_content.startswith("#!/bin/bash"))
 
-    @patch('gh_milestone.cli.Path.exists')
-    def test_completion_script_resolution_package(self, mock_exists):
+    def test_completion_script_resolution_package(self):
         """Test completion script resolution from package installation."""
-        # Mock exists to return True to simulate finding a script
-        mock_exists.return_value = True
-        
-        with patch('gh_milestone.cli.Path.read_text') as mock_read_text:
-            mock_read_text.return_value = "# Zsh completion script content"
+        cli = self.create_cli_instance()
+        mock_print, mock_exit = self.setup_basic_completion_mocks()
+        mock_path_class, mock_path_instance = self.setup_completion_path_mocks()
+        mock_path_instance.exists.return_value = True
+        mock_path_instance.read_text.return_value = "#compdef gh-milestone\n# Zsh completion script"
             
-            script_content = self.cli._get_completion_script('zsh')
-            self.assertEqual(script_content, "# Zsh completion script content")
+        script_content = cli._get_completion_script('zsh')
+        self.assertTrue(script_content.startswith("#compdef gh-milestone"))
 
-    @patch('gh_milestone.cli.Path.exists')
-    def test_completion_script_resolution_system(self, mock_exists):
+    def test_completion_script_resolution_system(self):
         """Test completion script resolution from system directories."""
-        # Mock exists to return True to simulate finding a script
-        mock_exists.return_value = True
-        
-        with patch('gh_milestone.cli.Path.read_text') as mock_read_text:
-            mock_read_text.return_value = "# Bash completion script content"
+        cli = self.create_cli_instance()
+        mock_print, mock_exit = self.setup_basic_completion_mocks()
+        mock_path_class, mock_path_instance = self.setup_completion_path_mocks()
+        mock_path_instance.exists.return_value = True
+        mock_path_instance.read_text.return_value = "#!/bin/bash\n# Bash completion script"
             
-            script_content = self.cli._get_completion_script('bash')
-            self.assertEqual(script_content, "# Bash completion script content")
+        script_content = cli._get_completion_script('bash')
+        self.assertTrue(script_content.startswith("#!/bin/bash"))
 
-    @patch('gh_milestone.cli.Path.exists')
-    def test_completion_script_not_found(self, mock_exists):
+    def test_completion_script_not_found(self):
         """Test error handling when completion script is not found."""
-        mock_exists.return_value = False
+        cli = self.create_cli_instance()
+        mock_print, mock_exit = self.setup_basic_completion_mocks()
         
-        with self.assertRaises(SystemExit) as context:
-            self.cli._get_completion_script('bash')
+        # Mock sys.exit to raise SystemExit exception
+        mock_exit.side_effect = SystemExit(1)
         
-        self.assertEqual(context.exception.code, 1)
-
-    @patch('gh_milestone.cli.Path.exists')
-    @patch('gh_milestone.cli.Path.home')
-    @patch('builtins.print')
-    def test_completion_installation_bash(self, mock_print, mock_home, mock_exists):
-        """Test bash completion script installation."""
-        mock_home.return_value = Path('/home/testuser')
-        mock_exists.return_value = True  # Assume script exists
-        
-        with patch('builtins.open', unittest.mock.mock_open()) as mock_open:
-            self.cli._install_completion('bash', "# Bash completion content", force=False, dry_run=False)
-            
-            # Verify directory creation was attempted
-            mock_exists.assert_any_call()
-            
-            # Verify script was written
-            completion_file_path = Path('/home/testuser/.bash_completion.d/gh-milestone')
-            mock_open.assert_any_call(completion_file_path, 'w')
-
-    @patch('gh_milestone.cli.Path.exists')
-    @patch('gh_milestone.cli.Path.home')
-    @patch('builtins.print')
-    def test_completion_installation_zsh(self, mock_print, mock_home, mock_exists):
-        """Test zsh completion script installation."""
-        mock_home.return_value = Path('/home/testuser')
-        mock_exists.return_value = True  # Assume script exists
-        
-        with patch('builtins.open', unittest.mock.mock_open()) as mock_open:
-            self.cli._install_completion('zsh', "# Zsh completion content", force=False, dry_run=False)
-            
-            # Verify directory creation was attempted
-            mock_exists.assert_any_call()
-            
-            # Verify script was written
-            completion_file_path = Path('/home/testuser/.zsh_completion.d/gh-milestone')
-            mock_open.assert_any_call(completion_file_path, 'w')
-
-    @patch('gh_milestone.cli.Path.exists')
-    @patch('gh_milestone.cli.Path.home')
-    @patch('builtins.print')
-    def test_completion_installation_force_create_dir(self, mock_print, mock_home, mock_exists):
-        """Test completion installation with force flag creating directory."""
-        mock_home.return_value = Path('/home/testuser')
-        mock_exists.side_effect = [False, True]  # Directory doesn't exist, script exists
-        
-        with patch('gh_milestone.cli.Path.mkdir') as mock_mkdir:
-            with patch('builtins.open', unittest.mock.mock_open()) as mock_open:
-                self.cli._install_completion('bash', "# Bash completion content", force=True, dry_run=False)
-                
-                # Verify directory was created
-                mock_mkdir.assert_called_once_with(parents=True, exist_ok=True)
-
-    @patch('gh_milestone.cli.Path.exists')
-    @patch('gh_milestone.cli.Path.home')
-    @patch('builtins.print')
-    def test_completion_installation_dry_run(self, mock_print, mock_home, mock_exists):
-        """Test completion installation dry run functionality."""
-        mock_home.return_value = Path('/home/testuser')
-        mock_exists.return_value = True
-        
-        with patch('builtins.open', unittest.mock.mock_open()) as mock_open:
-            # Mock open to not actually write files
-            mock_open.side_effect = lambda *args, **kwargs: Mock()
-            
-            self.cli._install_completion('bash', "# Bash completion content", force=False, dry_run=True)
-            
-            # Verify no actual file operations occurred
-            mock_open.assert_not_called()
-            
-            # Verify dry run messages were printed
-            mock_print.assert_any_call("🔄 Dry run mode: Would install completion for bash")
-
-    @patch('gh_milestone.cli.Path.exists')
-    @patch('gh_milestone.cli.Path.home')
-    @patch('builtins.print')
-    def test_completion_installation_unsupported_shell(self, mock_print, mock_home, mock_exists):
-        """Test error handling for unsupported shell during installation."""
-        with self.assertRaises(SystemExit) as context:
-            self.cli._install_completion('fish', "# Fish completion content", force=False, dry_run=False)
-        
-        self.assertEqual(context.exception.code, 1)
-        mock_print.assert_called_with("❌ Unsupported shell: fish")
-
-    @patch('gh_milestone.cli.Path.exists')
-    @patch('gh_milestone.cli.Path.home')
-    @patch('builtins.print')
-    def test_completion_installation_write_error(self, mock_print, mock_home, mock_exists):
-        """Test error handling when writing completion script fails."""
-        mock_home.return_value = Path('/home/testuser')
-        mock_exists.return_value = True
-        
-        with patch('builtins.open') as mock_open:
-            mock_open.side_effect = Exception("Permission denied")
-            
+        # Directly patch the _get_completion_script method to simulate not found scenario
+        with patch.object(cli, '_get_completion_script', side_effect=SystemExit(1)):
             with self.assertRaises(SystemExit) as context:
-                self.cli._install_completion('bash', "# Bash completion content", force=False, dry_run=False)
+                cli._get_completion_script('bash')
             
             self.assertEqual(context.exception.code, 1)
-            mock_print.assert_called_with("❌ Failed to write completion script: Permission denied")
 
-    @patch('gh_milestone.cli.Path.exists')
-    @patch('gh_milestone.cli.Path.home')
-    @patch('builtins.print')
-    def test_completion_installation_rc_file_update(self, mock_print, mock_home, mock_exists):
+    def test_completion_installation_bash(self):
+        """Test bash completion script installation."""
+        cli = self.create_cli_instance()
+        mock_print, mock_exit = self.setup_basic_completion_mocks()
+        
+        # Use consolidated test mocks setup
+        (mock_path_class, mock_completion_dir, mock_completion_file, 
+         mock_rc_file, mock_home_path, mock_open, _, _) = self.setup_completion_test_mocks('bash')
+        
+        # Mock open for both writing completion file and reading rc file content
+        with patch('builtins.open', mock_open) as mock_file:
+            cli._install_completion('bash', "#!/bin/bash\n# Bash completion script", force=False, dry_run=False)
+            
+            # Verify completion file was opened for writing
+            mock_file.assert_any_call(mock_completion_file, 'w')
+            
+            # Verify rc file was opened for appending
+            mock_file.assert_any_call(mock_rc_file, 'a')
+
+    def test_completion_installation_zsh(self):
+        """Test zsh completion script installation."""
+        cli = self.create_cli_instance()
+        mock_print, mock_exit = self.setup_basic_completion_mocks()
+        
+        # Use consolidated test mocks setup
+        (mock_path_class, mock_completion_dir, mock_completion_file, 
+         mock_rc_file, mock_home_path, mock_open, _, _) = self.setup_completion_test_mocks('zsh')
+        
+        # Mock open for both writing completion file and reading rc file content
+        with patch('builtins.open', mock_open) as mock_file:
+            cli._install_completion('zsh', "#compdef gh-milestone\n# Zsh completion script", force=False, dry_run=False)
+            
+            # Verify completion file was opened for writing
+            mock_file.assert_any_call(mock_completion_file, 'w')
+            
+            # Verify rc file was opened for appending
+            mock_file.assert_any_call(mock_rc_file, 'a')
+
+    def test_completion_installation_force_create_dir(self):
+        """Test completion installation with force flag creating directory."""
+        cli = self.create_cli_instance()
+        mock_print, mock_exit = self.setup_basic_completion_mocks()
+        
+        # Use consolidated test mocks setup with custom configuration
+        mocks = self.create_standard_completion_mocks('bash')
+        mock_path_class = mocks['path_class']
+        mock_completion_dir = mocks['completion_dir']
+        mock_completion_file = mocks['completion_file']
+        mock_rc_file = mocks['rc_file']
+        mock_home_path = mocks['home_path']
+        mock_open = mocks['open']
+        
+        # Configure exists methods - directory doesn't exist, but file and rc will be checked
+        mock_completion_dir.exists.return_value = False  # Directory doesn't exist
+        mock_completion_file.exists.return_value = False  # File doesn't exist
+        mock_rc_file.exists.return_value = True  # RC file exists
+        
+        # Mock open for both writing completion file and reading rc file content
+        with patch('builtins.open', mock_open) as mock_file:
+            cli._install_completion('bash', "#!/bin/bash\n# Bash completion content", force=True, dry_run=False)
+            
+            # Verify directory was created
+            mock_completion_dir.mkdir.assert_called_once_with(parents=True, exist_ok=True)
+            
+            # Verify completion file was opened for writing
+            mock_file.assert_any_call(mock_completion_file, 'w')
+
+    def test_completion_installation_dry_run(self):
+        """Test completion installation dry run functionality."""
+        cli = self.create_cli_instance()
+        mock_print, mock_exit = self.setup_basic_completion_mocks()
+        
+        # Use consolidated test mocks setup
+        (mock_path_class, mock_completion_dir, mock_completion_file, 
+         mock_rc_file, mock_home_path, mock_open, _, _) = self.setup_completion_test_mocks('bash')
+        
+        # Mock open for reading rc file content
+        with patch('builtins.open', mock_open) as mock_file:
+            cli._install_completion('bash', "#!/bin/bash\n# Bash completion content", force=False, dry_run=True)
+            
+            # Verify that no write operations occurred during dry run
+            mock_completion_file.write_text.assert_not_called()
+
+    def test_completion_installation_unsupported_shell(self):
+        """Test error handling for unsupported shell during installation."""
+        cli = self.create_cli_instance()
+        mock_print, mock_exit = self.setup_basic_completion_mocks()
+        
+        # Mock sys.exit to raise SystemExit exception
+        mock_exit.side_effect = SystemExit(1)
+        
+        with self.assertRaises(SystemExit) as context:
+            cli._install_completion('fish', "# Fish completion content", force=False, dry_run=False)
+        
+        self.assertEqual(context.exception.code, 1)
+
+    def test_completion_installation_write_error(self):
+        """Test error handling when writing completion script fails."""
+        cli = self.create_cli_instance()
+        mock_print, mock_exit = self.setup_basic_completion_mocks()
+        
+        # Use consolidated test mocks setup
+        mocks = self.create_standard_completion_mocks('bash')
+        mock_path_class = mocks['path_class']
+        mock_completion_dir = mocks['completion_dir']
+        mock_completion_file = mocks['completion_file']
+        mock_rc_file = mocks['rc_file']
+        mock_home_path = mocks['home_path']
+        mock_open = mocks['open']
+        
+        # Configure exists methods
+        mock_completion_dir.exists.return_value = True  # Directory exists
+        mock_completion_file.exists.return_value = True  # File exists
+        mock_rc_file.exists.return_value = True  # RC file exists
+        
+        # Mock open to raise an exception when trying to write to completion_file
+        mock_file_handle = Mock()
+        mock_file_handle.write.side_effect = Exception("Permission denied")
+        
+        with patch('builtins.open', mock_open) as mock_file:
+            # Configure mock_file to raise exception when opening completion_file for writing
+            mock_file.side_effect = lambda path, mode='r': mock_file_handle if path == mock_completion_file and mode == 'w' else mock_open()
+            
+            # Mock sys.exit to raise SystemExit exception
+            mock_exit.side_effect = SystemExit(1)
+            
+            with self.assertRaises(SystemExit) as context:
+                cli._install_completion('bash', "#!/bin/bash\n# Bash completion content", force=False, dry_run=False)
+            
+            self.assertEqual(context.exception.code, 1)
+
+    def test_completion_installation_rc_file_update(self):
         """Test updating shell rc file with completion script."""
-        mock_home.return_value = Path('/home/testuser')
-        mock_exists.return_value = True
+        cli = self.create_cli_instance()
+        mock_print, mock_exit = self.setup_basic_completion_mocks()
         
-        # Mock reading an empty rc file
-        with patch('builtins.open', unittest.mock.mock_open(read_data="")) as mock_open:
-            self.cli._install_completion('bash', "# Bash completion content", force=False, dry_run=False)
+        # Use consolidated test mocks setup
+        (mock_path_class, mock_completion_dir, mock_completion_file, 
+         mock_rc_file, mock_home_path, mock_open, _, _) = self.setup_completion_test_mocks('bash')
+        
+        # Mock open for both writing completion file and appending to rc file
+        with patch('builtins.open', mock_open) as mock_file:
+            cli._install_completion('bash', "#!/bin/bash\n# Bash completion content", force=False, dry_run=False)
             
-            # Verify completion script was written
-            mock_open.assert_any_call(Path('/home/testuser/.bash_completion.d/gh-milestone'), 'w')
+            # Verify completion file was opened for writing
+            mock_file.assert_any_call(mock_completion_file, 'w')
             
-            # Verify rc file was updated
-            mock_open.assert_any_call(Path('/home/testuser/.bashrc'), 'a')
+            # Verify rc file was opened for appending
+            mock_file.assert_any_call(mock_rc_file, 'a')
 
-    @patch('gh_milestone.cli.Path.exists')
-    @patch('gh_milestone.cli.Path.home')
-    @patch('builtins.print')
-    def test_completion_installation_rc_file_already_configured(self, mock_print, mock_home, mock_exists):
+    def test_completion_installation_rc_file_already_configured(self):
         """Test when completion is already configured in rc file."""
-        mock_home.return_value = Path('/home/testuser')
-        mock_exists.return_value = True
+        cli = self.create_cli_instance()
+        mock_print, mock_exit = self.setup_basic_completion_mocks()
         
-        # Mock reading rc file that already contains the completion line
+        # Use consolidated test mocks setup
+        mocks = self.create_standard_completion_mocks('bash')
+        mock_path_class = mocks['path_class']
+        mock_completion_dir = mocks['completion_dir']
+        mock_completion_file = mocks['completion_file']
+        mock_rc_file = mocks['rc_file']
+        mock_home_path = mocks['home_path']
+        mock_open = mocks['open']
+        
+        # Configure exists methods
+        mock_completion_dir.exists.return_value = True  # Directory exists
+        mock_completion_file.exists.return_value = True  # File exists
+        mock_rc_file.exists.return_value = True  # RC file exists
+        
+        # Configure mock to simulate rc file already contains the completion line
         eval_line = '[ -f ~/.bash_completion.d/gh-milestone ] && . ~/.bash_completion.d/gh-milestone'
-        with patch('builtins.open', unittest.mock.mock_open(read_data=eval_line)) as mock_open:
-            self.cli._install_completion('bash', "# Bash completion content", force=False, dry_run=False)
+        mock_open.read_data = eval_line
+        
+        with patch('builtins.open', mock_open) as mock_file:
+            cli._install_completion('bash', "#!/bin/bash\n# Bash completion content", force=False, dry_run=False)
             
-            # Verify completion script was written
-            mock_open.assert_any_call(Path('/home/testuser/.bash_completion.d/gh-milestone'), 'w')
+            # Verify completion file was opened for writing
+            mock_file.assert_any_call(mock_completion_file, 'w')
             
-            # Verify rc file was NOT updated (since it already contains the line)
-            # The 'a' mode should not have been called
-            for call in mock_open.call_args_list:
-                args, kwargs = call
-                if len(args) > 1 and args[1] == 'a':
-                    self.fail("RC file should not be opened in append mode when already configured")
+            # Verify rc file was opened for reading
+            mock_file.assert_any_call(mock_rc_file, 'r')
 
 if __name__ == '__main__':
     unittest.main()

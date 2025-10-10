@@ -10,7 +10,6 @@ from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import Tool, TextContent
 import asyncio
-import logging
 from .cli import CLI
 from .github_client import GitHubClient
 from .state_manager import StateManager
@@ -18,16 +17,24 @@ from .schema_validator import SchemaValidator
 from .shared_operations import SharedOperations
 from .config import Config
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
 class MCPServer:
     """MCP Server with GitHub Milestone CLI."""
     
     def __init__(self, schema_file: str = Config.DEFAULT_SCHEMA_FILE, verbose: bool = False):
         """Initialize MCP server with tools."""
-        self.schema_file = schema_file
+        # Ensure schema file exists
+        if not os.path.exists(schema_file):
+            # Try to find it relative to the current file
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            parent_dir = os.path.dirname(script_dir)
+            schema_path = os.path.join(parent_dir, "schema.json")
+            if os.path.exists(schema_path):
+                self.schema_file = schema_path
+            else:
+                raise FileNotFoundError(f"Schema file '{schema_file}' not found.")
+        else:
+            self.schema_file = schema_file
+            
         self.verbose = verbose
         self.server = Server("gh-milestone-cli")
         self.cli = CLI()
@@ -444,9 +451,9 @@ class MCPServer:
         async with stdio_server() as (read_stream, write_stream):
             await self.server.run(
                 read_stream, 
-                write_stream
+                write_stream,
+                initialization_options={}
             )
-    
     async def run_http(self, host: str = Config.DEFAULT_HOST, port: int = Config.DEFAULT_MCP_PORT):
         """Run the MCP server using HTTP transport."""
         # HTTP transport would require additional setup

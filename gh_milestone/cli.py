@@ -483,9 +483,10 @@ Examples:
         return github_client, state_manager, roadmap_data
     
     @exception_handler
-    def _handle_create_command(self, args: argparse.Namespace, schema_file: str, repo: str = None):
+    def _handle_create_command(self, args: argparse.Namespace):
         """Handle the create command execution."""
-        github_client, state_manager, roadmap_data = self._common_setup(args.roadmap_file, schema_file, args.repo)
+        schema_file = getattr(args, 'schema', Config.DEFAULT_SCHEMA_FILE)
+        github_client, state_manager, roadmap_data = self._common_setup(args.roadmap_file, schema_file, getattr(args, 'repo', None))
         self._create_issues(roadmap_data, github_client, state_manager)
 
     def _create_issues(self, roadmap_data: dict, github_client: GitHubClient, state_manager: StateManager):
@@ -493,10 +494,11 @@ Examples:
         SharedOperations.create_issues_from_roadmap(roadmap_data, github_client, state_manager)
     
     @exception_handler
-    def _handle_validate_command(self, args: argparse.Namespace, schema_file: str, repo: str = None):
+    def _handle_validate_command(self, args: argparse.Namespace):
         """Handle the validate command execution."""
+        schema_file = getattr(args, 'schema', Config.DEFAULT_SCHEMA_FILE)
         try:
-            _, _, roadmap_data = self._common_setup(args.roadmap_file, schema_file, args.repo)
+            _, _, roadmap_data = self._common_setup(args.roadmap_file, schema_file, getattr(args, 'repo', None))
             SharedOperations.validate_roadmap_only(roadmap_data, schema_file)
             print("✅ Roadmap validation successful")
             sys.exit(0)
@@ -505,9 +507,10 @@ Examples:
             sys.exit(1)
     
     @exception_handler
-    def _handle_delete_command(self, args: argparse.Namespace, schema_file: str, repo: str = None):
+    def _handle_delete_command(self, args: argparse.Namespace):
         """Handle the delete command execution."""
-        github_client, state_manager, roadmap_data = self._common_setup(args.roadmap_file, schema_file, args.repo)
+        schema_file = getattr(args, 'schema', Config.DEFAULT_SCHEMA_FILE)
+        github_client, state_manager, roadmap_data = self._common_setup(args.roadmap_file, schema_file, getattr(args, 'repo', None))
         
         SharedOperations.delete_issues(github_client, state_manager, args.milestone, args.task, 
                                      args.milestone_parent, roadmap_data)
@@ -515,9 +518,10 @@ Examples:
         state_manager.save_state()
     
     @exception_handler
-    def _handle_update_command(self, args: argparse.Namespace, schema_file: str, repo: str = None):
+    def _handle_update_command(self, args: argparse.Namespace):
         """Handle the update command execution."""
-        github_client, state_manager, roadmap_data = self._common_setup(args.roadmap_file, schema_file, args.repo)
+        schema_file = getattr(args, 'schema', Config.DEFAULT_SCHEMA_FILE)
+        github_client, state_manager, roadmap_data = self._common_setup(args.roadmap_file, schema_file, getattr(args, 'repo', None))
         
         SharedOperations.update_issues(github_client, state_manager, args.milestone, args.task, 
                                      args.milestone_parent, roadmap_data, args.update_title, 
@@ -526,9 +530,10 @@ Examples:
         state_manager.save_state()
     
     @exception_handler
-    def _handle_validate_state_command(self, args: argparse.Namespace, schema_file: str, repo: str = None):
+    def _handle_validate_state_command(self, args: argparse.Namespace):
         """Handle the validate-state command execution."""
-        github_client, state_manager, roadmap_data = self._common_setup(args.roadmap_file, schema_file, args.repo)
+        schema_file = getattr(args, 'schema', Config.DEFAULT_SCHEMA_FILE)
+        github_client, state_manager, roadmap_data = self._common_setup(args.roadmap_file, schema_file, getattr(args, 'repo', None))
         
         # Validate state entries
         invalid_entries = state_manager.validate_state(github_client)
@@ -556,9 +561,10 @@ Examples:
                 print("🔄 Dry run mode: Showing what would be cleaned up")
     
     @exception_handler
-    def _handle_migrate_state_command(self, args: argparse.Namespace, schema_file: str, repo: str = None):
+    def _handle_migrate_state_command(self, args: argparse.Namespace):
         """Handle the migrate-state command execution."""
-        github_client, state_manager, roadmap_data = self._common_setup(args.roadmap_file, schema_file, args.repo)
+        schema_file = getattr(args, 'schema', Config.DEFAULT_SCHEMA_FILE)
+        github_client, state_manager, roadmap_data = self._common_setup(args.roadmap_file, schema_file, getattr(args, 'repo', None))
         
         # Perform migration
         migration_summary = state_manager.migrate_state(roadmap_data, dry_run=args.dry_run)
@@ -684,6 +690,12 @@ Examples:
     
     def _install_completion(self, shell: str, completion_script: str, force: bool, dry_run: bool = False):
         """Install completion script."""
+        # Initialize variables for all shell types
+        completion_dir = None
+        completion_file = None
+        rc_file = None
+        eval_line = None
+        
         if shell == 'bash':
             completion_dir = Path.home() / '.bash_completion.d'
             completion_file = completion_dir / 'gh-milestone'
@@ -752,6 +764,7 @@ Examples:
     @exception_handler
     def _handle_mcp_command(self, args: argparse.Namespace):
         """Handle the MCP server command execution."""
+        import asyncio
         from .mcp_server import MCPServer
         
         # Validate schema file exists
@@ -778,9 +791,9 @@ Examples:
         
         try:
             if args.transport == 'stdio':
-                server.run_stdio()
+                asyncio.run(server.run_stdio())
             else:  # http
-                server.run_http(host=args.host, port=args.port)
+                asyncio.run(server.run_http(host=args.host, port=args.port))
         except KeyboardInterrupt:
             print("\n🛑 MCP server stopped by user")
             sys.exit(0)
@@ -829,9 +842,10 @@ Examples:
             sys.exit(1)
 
     @exception_handler
-    def _handle_sync_command(self, args: argparse.Namespace, schema_file: str, repo: str = None):
+    def _handle_sync_command(self, args: argparse.Namespace):
         """Handle the sync command execution."""
-        github_client, state_manager, roadmap_data = self._common_setup(args.roadmap_file, schema_file, args.repo)
+        schema_file = getattr(args, 'schema', Config.DEFAULT_SCHEMA_FILE)
+        github_client, state_manager, roadmap_data = self._common_setup(args.roadmap_file, schema_file, getattr(args, 'repo', None))
         
         # Sync state with GitHub and roadmap
         sync_summary = state_manager.sync_state(github_client, roadmap_data, dry_run=args.dry_run)
@@ -935,15 +949,17 @@ Examples:
             print("\n✅ Sync completed - no changes needed")
     
     @exception_handler
-    def _handle_list_command(self, args: argparse.Namespace, schema_file: str, repo: str = None):
+    def _handle_list_command(self, args: argparse.Namespace):
         """Handle the list command execution."""
-        github_client, state_manager, roadmap_data = self._common_setup(args.roadmap_file, schema_file, args.repo)
+        schema_file = getattr(args, 'schema', Config.DEFAULT_SCHEMA_FILE)
+        github_client, state_manager, roadmap_data = self._common_setup(args.roadmap_file, schema_file, getattr(args, 'repo', None))
         SharedOperations.list_issues(state_manager, roadmap_data, args.format, args.show_missing)
     
     @exception_handler
-    def _handle_status_command(self, args: argparse.Namespace, schema_file: str, repo: str = None):
+    def _handle_status_command(self, args: argparse.Namespace):
         """Handle the status command execution."""
-        github_client, state_manager, roadmap_data = self._common_setup(args.roadmap_file, schema_file, args.repo)
+        schema_file = getattr(args, 'schema', Config.DEFAULT_SCHEMA_FILE)
+        github_client, state_manager, roadmap_data = self._common_setup(args.roadmap_file, schema_file, getattr(args, 'repo', None))
         SharedOperations.get_status(github_client, state_manager, roadmap_data, args.format, args.detailed)
     
     def _list_issues(self, state_manager: StateManager, roadmap_data: dict, format_type: str, show_missing: bool):
@@ -986,7 +1002,7 @@ Examples:
                 # Add missing tasks
                 existing_tasks = [task['title'] for task in output_data['milestones'][title]['tasks']]
                 for task in milestone.get('tasks', []):
-                    task_title = f"Task: {task['title']}"
+                    task_title = task['title']
                     if task_title not in existing_tasks:
                         output_data['milestones'][title]['tasks'].append({
                             'title': task_title,
@@ -994,6 +1010,8 @@ Examples:
                             'url': None
                         })
         
+        # Print the JSON output
+        print(json.dumps(output_data, indent=2))
     
     def run(self, args: argparse.Namespace):
         """Run the CLI tool with the given arguments."""
@@ -1027,10 +1045,7 @@ Examples:
 
         # Execute the appropriate command handler
         if args.command in self.command_handlers:
-            if args.command in ['completion', 'mcp', 'mcp-server']:
-                self.command_handlers[args.command](args)
-            else:
-                self.command_handlers[args.command](args, schema_file, getattr(args, 'repo', None))
+            self.command_handlers[args.command](args)
         else:
             print(f"❌ Unknown command: {args.command}")
             sys.exit(1)
