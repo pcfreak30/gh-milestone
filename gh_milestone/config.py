@@ -22,6 +22,7 @@ class Config:
     DEFAULT_TASK_LABEL = "task"
     DEFAULT_MAIN_TRACKING_LABELS = ["epic", "roadmap"]
     DEFAULT_TASK_PREFIX = "Task: "
+    DEFAULT_ROADMAP_FILE = "roadmap.json"
     
     @staticmethod
     def get_repo_name(explicit_repo: Optional[str] = None) -> str:

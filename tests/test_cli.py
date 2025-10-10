@@ -260,6 +260,31 @@ class TestCLI(BaseTestCase):
             }
         )
 
+    def test_parse_args_create_command_default_filename(self):
+        """Test that create command uses default filename when no roadmap_file is provided."""
+        self._test_parse_args(
+            ['cli.py', 'create'],
+            {
+                'command': 'create',
+                'roadmap_file': 'roadmap.json',
+                'repo': None,
+                'verbose': False
+            }
+        )
+
+    def test_parse_args_validate_command_default_filename(self):
+        """Test that validate command uses default filename when no roadmap_file is provided."""
+        self._test_parse_args(
+            ['cli.py', 'validate'],
+            {
+                'command': 'validate',
+                'roadmap_file': 'roadmap.json',
+                'repo': None,
+                'schema': 'schema.json',
+                'verbose': False
+            }
+        )
+
     def test_parse_args_mcp_command(self):
         """Test parsing arguments for mcp command."""
         self._test_parse_args(

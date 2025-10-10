@@ -149,7 +149,9 @@ Examples:
         create_parser = subparsers.add_parser('create', help='Create GitHub milestone structures from roadmap')
         create_parser.add_argument(
             "roadmap_file",
-            help="Path to the JSON file containing milestone/task definitions"
+            nargs="?",
+            default=Config.DEFAULT_ROADMAP_FILE,
+            help="Path to the JSON file containing milestone/task definitions (default: roadmap.json)"
         )
         create_parser.add_argument(
             "--repo",
@@ -170,7 +172,9 @@ Examples:
         validate_parser = subparsers.add_parser('validate', help='Validate roadmap file against schema')
         validate_parser.add_argument(
             "roadmap_file",
-            help="Path to the JSON file containing milestone/task definitions"
+            nargs="?",
+            default=Config.DEFAULT_ROADMAP_FILE,
+            help="Path to the JSON file containing milestone/task definitions (default: roadmap.json)"
         )
         validate_parser.add_argument(
             "--repo",
@@ -473,7 +477,7 @@ Examples:
             print("Please specify a repository using --repo option or GH_REPO environment variable.")
             sys.exit(1)
             
-        github_client = GitHubClient(repo=repo_name)
+        github_client = GitHubClient(explicit_repo=repo_name)
         state_manager = StateManager(roadmap_file)
         
         # Load and validate roadmap data
@@ -1022,6 +1026,30 @@ Examples:
 
         # Handle commands that don't require a roadmap file
         if args.command in ['completion', 'mcp', 'mcp-server']:
+            self.command_handlers[args.command](args)
+            return
+
+        # For create command, we need to check if roadmap file exists
+        if args.command == 'create':
+            # For create command, we check if the roadmap file exists
+            if not Path(args.roadmap_file).exists():
+                print(f"Error: Roadmap file '{args.roadmap_file}' not found.")
+                sys.exit(1)
+            
+            schema_file = getattr(args, 'schema', Config.DEFAULT_SCHEMA_FILE)
+            if not Path(schema_file).exists():
+                print(f"Error: Schema file '{schema_file}' not found.")
+                sys.exit(1)
+            
+            print("GitHub Milestone CLI")
+            print("=" * 40)
+            
+            if getattr(args, 'verbose', False):
+                print(f"Roadmap file: {args.roadmap_file}")
+                print(f"Schema file: {schema_file}")
+                print()
+            
+            # Execute the create command handler
             self.command_handlers[args.command](args)
             return
 
