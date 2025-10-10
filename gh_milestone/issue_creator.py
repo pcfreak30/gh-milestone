@@ -58,7 +58,7 @@ class IssueCreator:
             # Create sub-issues for each task
             for task in milestone.get('tasks', []):
                 task_title = f"{Config.DEFAULT_TASK_PREFIX}{task['title']}"
-                
+            
                 # Check if task already exists in state
                 existing_task = self.state_manager.get_task_issue(milestone_title, task_title)
                 if existing_task:
@@ -73,7 +73,9 @@ class IssueCreator:
                         'number': sub_num,
                         'url': sub_url
                     })
-                    
+                    # Save state after adding task
+                    self.state_manager.save_state(verbose=False)
+                
                     # Link sub-issue to parent
                     self.github_client.link_sub_issue(parent_num, sub_num)
 
@@ -91,13 +93,12 @@ class IssueCreator:
                 'number': main_num,
                 'url': main_url
             })
+            # Save state after setting main tracking issue
+            self.state_manager.save_state(verbose=False)
 
         # Link all parent issues to the main tracking issue
         for parent_num in parent_issues.values():
             self.github_client.link_sub_issue(main_num, parent_num)
-
-        # Save updated state
-        self.state_manager.save_state()
 
         # Print summary
         total_tasks = sum(len(milestone.get('tasks', [])) for milestone in milestones)

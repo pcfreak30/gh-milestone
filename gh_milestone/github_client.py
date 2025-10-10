@@ -89,10 +89,16 @@ class GitHubClient:
         # Use the GitHub REST API directly to add sub-issue
         # POST /repos/{owner}/{repo}/issues/{issue_number}/sub_issues
         try:
+            # First get the issues to obtain their IDs (required for linking)
+            repo = self.client.get_repo(repo_name)
+            parent_issue = repo.get_issue(parent_issue_num)
+            sub_issue = repo.get_issue(sub_issue_num)
+            
+            # Use the correct endpoint with issue IDs
             self.client._Github__requester.requestJsonAndCheck(
                 "POST",
-                f"/repos/{repo_name}/issues/{parent_issue_num}/sub_issues",
-                input={"sub_issue_id": sub_issue_num}
+                f"/repos/{repo_name}/issues/{parent_issue.number}/sub_issues",
+                input={"sub_issue_id": sub_issue.id}
             )
             print(f"Linked issue #{sub_issue_num} to parent #{parent_issue_num}")
         except Exception as e:
