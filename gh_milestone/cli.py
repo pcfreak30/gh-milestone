@@ -471,7 +471,7 @@ Examples:
     def _common_setup(self, roadmap_file: str, schema_file: str, repo: str = None):
         """Common setup for CLI commands that need GitHub client and state manager."""
         # Get repository name using Config's auto-detection with explicit override
-        repo_name = Config.get_repo_name(repo)
+        repo_name = Config.get_repo_name(repo, roadmap_file)
         if not repo_name:
             print("❌ No repository specified and unable to auto-detect from current directory.")
             print("Please specify a repository using --repo option or GH_REPO environment variable.")
@@ -529,7 +529,7 @@ Examples:
         
         SharedOperations.update_issues(github_client, state_manager, args.milestone, args.task, 
                                      args.milestone_parent, roadmap_data, args.update_title, 
-                                     args.update_description, args.update_labels)
+                                     args.update_description, args.update_labels, args.roadmap_file)
             
         state_manager.save_state()
     

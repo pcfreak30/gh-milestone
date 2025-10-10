@@ -255,7 +255,8 @@ class SharedOperations:
     def update_issues(github_client: GitHubClient, state_manager: StateManager,
                      milestone_title: str, task_title: str, milestone_parent: str,
                      roadmap_data: Dict[str, Any], update_title: bool, 
-                     update_description: bool, update_labels: bool) -> Dict[str, Any]:
+                     update_description: bool, update_labels: bool,
+                     roadmap_file: str = None) -> Dict[str, Any]:
         """
         Update GitHub issues based on roadmap data.
         
@@ -269,6 +270,7 @@ class SharedOperations:
             update_title: Whether to update issue titles
             update_description: Whether to update issue descriptions
             update_labels: Whether to update issue labels
+            roadmap_file: Path to roadmap file for repository detection
             
         Returns:
             Dictionary with update results
@@ -326,7 +328,7 @@ class SharedOperations:
             
             # Update the issue using GitHub API
             try:
-                repo_name = Config.get_repo_name()
+                repo_name = Config.get_repo_name(roadmap_file=roadmap_file)
                 if not repo_name:
                     print("❌ Repository name could not be determined. Please set GH_REPO environment variable or run within a git repository with a GitHub remote.")
                     sys.exit(1)
@@ -428,7 +430,7 @@ class SharedOperations:
             
             # Update the issue using GitHub API
             try:
-                repo_name = Config.get_repo_name()
+                repo_name = Config.get_repo_name(roadmap_file=roadmap_file)
                 if not repo_name:
                     print("❌ Repository name could not be determined. Please set GH_REPO environment variable or run within a git repository with a GitHub remote.")
                     sys.exit(1)
@@ -549,7 +551,7 @@ class SharedOperations:
     
     @staticmethod
     def update_all_issues(github_client: GitHubClient, state_manager: StateManager,
-                         roadmap_data: Dict[str, Any]) -> Dict[str, Any]:
+                         roadmap_data: Dict[str, Any], roadmap_file: str = None) -> Dict[str, Any]:
         """
         Update all GitHub milestone and task issues based on roadmap data.
         
@@ -557,6 +559,7 @@ class SharedOperations:
             github_client: GitHubClient instance
             state_manager: StateManager instance
             roadmap_data: The roadmap data
+            roadmap_file: Path to roadmap file for repository detection
             
         Returns:
             Dictionary with update results
@@ -573,7 +576,7 @@ class SharedOperations:
                 # Update milestone with all flags set to True
                 SharedOperations.update_issues(
                     github_client, state_manager, milestone_title, None, None,
-                    roadmap_data, True, True, True
+                    roadmap_data, True, True, True, roadmap_file
                 )
                 updated_milestones += 1
                 print(f"Updated milestone '{milestone_title}'")
@@ -585,7 +588,7 @@ class SharedOperations:
                     if task_title:  # Only update if we have a valid task title
                         SharedOperations.update_issues(
                             github_client, state_manager, None, task_title, milestone_title,
-                            roadmap_data, True, True, True
+                            roadmap_data, True, True, True, roadmap_file
                         )
                         updated_tasks += 1
                         print(f"Updated task '{task_title}' in milestone '{milestone_title}'")

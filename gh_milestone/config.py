@@ -25,17 +25,18 @@ class Config:
     DEFAULT_ROADMAP_FILE = "roadmap.json"
     
     @staticmethod
-    def get_repo_name(explicit_repo: Optional[str] = None) -> str:
+    def get_repo_name(explicit_repo: Optional[str] = None, roadmap_file: Optional[str] = None) -> str:
         """
         Get repository name with auto-detection.
         
         Priority order:
         1. Explicit repo parameter (from --repo option)
         2. GH_REPO environment variable
-        3. Auto-detect from current git directory
+        3. Auto-detect from roadmap file's git directory
         
         Args:
             explicit_repo: Explicit repository name from command line
+            roadmap_file: Path to roadmap file to use for git directory detection
             
         Returns:
             Repository name in 'owner/repo' format or empty string if not found
@@ -49,24 +50,38 @@ class Config:
         if env_repo:
             return env_repo
             
-        # Priority 3: Auto-detect from current directory
-        return Config._detect_repo_from_git()
+        # Priority 3: Auto-detect from roadmap file's git directory
+        return Config._detect_repo_from_git(roadmap_file)
     
     @staticmethod
-    def _detect_repo_from_git() -> str:
+    def _detect_repo_from_git(roadmap_file: Optional[str] = None) -> str:
         """
-        Auto-detect repository name from current git directory.
+        Auto-detect repository name from roadmap file's git directory.
         
+        Args:
+            roadmap_file: Path to roadmap file to determine git directory
+            
         Returns:
             Repository name in 'owner/repo' format or empty string if not found
         """
         try:
-            # Get the remote origin URL directly
+            # Determine the working directory for git command
+            working_dir = None
+            if roadmap_file:
+                roadmap_path = Path(roadmap_file)
+                if roadmap_path.is_absolute():
+                    working_dir = roadmap_path.parent
+                else:
+                    # If roadmap_file is relative, use current working directory
+                    working_dir = Path.cwd()
+            
+            # Get the remote origin URL from the roadmap file's directory
             result = subprocess.run(
                 ["git", "config", "--get", "remote.origin.url"],
                 capture_output=True,
                 text=True,
-                check=False
+                check=False,
+                cwd=working_dir
             )
             
             if result.returncode != 0 or not result.stdout:
