@@ -1017,6 +1017,22 @@ Examples:
         # Print the JSON output
         print(json.dumps(output_data, indent=2))
     
+    def _resolve_file_path(self, file_path: str) -> Path:
+        """
+        Resolve file path to absolute path.
+        
+        Args:
+            file_path: Path to resolve (can be relative or absolute)
+            
+        Returns:
+            Absolute Path object
+        """
+        path = Path(file_path)
+        if path.is_absolute():
+            return path
+        else:
+            return Path.cwd() / path
+
     def run(self, args: argparse.Namespace):
         """Run the CLI tool with the given arguments."""
         # If no command was provided, show help
@@ -1032,14 +1048,19 @@ Examples:
         # For create command, we need to check if roadmap file exists
         if args.command == 'create':
             # For create command, we check if the roadmap file exists
-            if not Path(args.roadmap_file).exists():
+            roadmap_path = self._resolve_file_path(args.roadmap_file)
+            if not roadmap_path.exists():
                 print(f"Error: Roadmap file '{args.roadmap_file}' not found.")
                 sys.exit(1)
             
             schema_file = getattr(args, 'schema', Config.DEFAULT_SCHEMA_FILE)
-            if not Path(schema_file).exists():
+            schema_path = self._resolve_file_path(schema_file)
+            if not schema_path.exists():
                 print(f"Error: Schema file '{schema_file}' not found.")
                 sys.exit(1)
+            
+            # Update args with resolved paths
+            args.roadmap_file = str(roadmap_path)
             
             print("GitHub Milestone CLI")
             print("=" * 40)
@@ -1054,14 +1075,21 @@ Examples:
             return
 
         # Check if files exist (for all other commands)
-        if not Path(args.roadmap_file).exists():
+        roadmap_path = self._resolve_file_path(args.roadmap_file)
+        if not roadmap_path.exists():
             print(f"Error: Roadmap file '{args.roadmap_file}' not found.")
             sys.exit(1)
 
         schema_file = getattr(args, 'schema', Config.DEFAULT_SCHEMA_FILE)
-        if not Path(schema_file).exists():
+        schema_path = self._resolve_file_path(schema_file)
+        if not schema_path.exists():
             print(f"Error: Schema file '{schema_file}' not found.")
             sys.exit(1)
+        
+        # Update args with resolved paths
+        args.roadmap_file = str(roadmap_path)
+        if hasattr(args, 'schema'):
+            args.schema = str(schema_path)
 
         print("GitHub Milestone CLI")
         print("=" * 40)
