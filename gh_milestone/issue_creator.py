@@ -74,7 +74,7 @@ class IssueCreator:
                         'url': sub_url
                     })
                     # Save state after adding task
-                    self.state_manager.save_state(verbose=False)
+                    self.state_manager.save_state()
                 
                     # Link sub-issue to parent
                     self.github_client.link_sub_issue(parent_num, sub_num)
@@ -94,7 +94,7 @@ class IssueCreator:
                 'url': main_url
             })
             # Save state after setting main tracking issue
-            self.state_manager.save_state(verbose=False)
+            self.state_manager.save_state()
 
         # Link all parent issues to the main tracking issue
         for parent_num in parent_issues.values():
